@@ -30,9 +30,15 @@ public class AuthController {
             @RequestBody UserLoginRequestDto userLoginRequestDto,
             HttpServletResponse response
     ) {
+<<<<<<< HEAD
         AuthTokenDto result = authService.login(userLoginRequestDto.email(), userLoginRequestDto.password());
         addRefreshTokenCookie(response, result.refreshToken());
         return result.userInfo();
+=======
+        AuthTokenDto result = authService.login(userLoginRequestDto.getEmail(), userLoginRequestDto.getPassword());
+        addRefreshTokenCookie(response, result.getRefreshToken());
+        return result.getUserInfo();
+>>>>>>> 68da5e4 (fix: lock -> 원자 update)
     }
 
     @PostMapping("/logout")
@@ -43,7 +49,11 @@ public class AuthController {
         String accessToken = resolveAccessToken(request);
         User user = authService.logout(accessToken);
         deleteRefreshTokenCookie(response);
+<<<<<<< HEAD
         return ResponseEntity.ok("Logged out: " + user.getEmail());
+=======
+        return ResponseEntity.ok("로그아웃 완료: " + user.getEmail());
+>>>>>>> 68da5e4 (fix: lock -> 원자 update)
     }
 
     @PostMapping("/reissue")
