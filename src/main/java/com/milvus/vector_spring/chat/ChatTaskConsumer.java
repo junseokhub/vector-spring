@@ -1,8 +1,6 @@
 package com.milvus.vector_spring.chat;
 
 import com.milvus.vector_spring.chat.dto.ChatCompleteEvent;
-import com.milvus.vector_spring.common.apipayload.status.ErrorStatus;
-import com.milvus.vector_spring.common.exception.CustomException;
 import com.milvus.vector_spring.config.mongo.document.ChatResponseDocument;
 import com.milvus.vector_spring.project.ProjectService;
 import lombok.RequiredArgsConstructor;
@@ -48,17 +46,14 @@ public class ChatTaskConsumer {
     @Async
     public void handlePostChatTask(ChatCompleteEvent event) {
         try {
-            try {
-                mongoTemplate.save(ChatResponseDocument.from(event));
-                log.info("Chat result saved: sessionId={}", event.sessionId());
-            } catch (DuplicateKeyException e) {
-                log.warn("Duplicate chat result skipped: sessionId={}", event.sessionId());
-                return;
-            }
-            projectService.plusTotalToken(event.projectKey(), event.totalToken());
+            mongoTemplate.save(ChatResponseDocument.from(event));
+            log.info("Chat result saved: sessionId={}", event.sessionId());
+        } catch (DuplicateKeyException e) {
+            log.warn("Duplicate skipped: sessionId={}", event.sessionId());
         } catch (Exception e) {
-            log.error("Chat task processing failed: {}", e.getMessage());
-            throw new CustomException(ErrorStatus.INTERNAL_SERVER_ERROR, e);
+            // async void라 throw는 무의미 → 로깅만 (앞의 죽은 throw 제거)
+            log.error("Mongo save failed (non-critical): sessionId={}, {}",
+                    event.sessionId(), e.getMessage());
         }
     }
 

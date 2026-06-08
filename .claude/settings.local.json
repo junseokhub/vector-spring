@@ -5,7 +5,13 @@
       "Bash(git add *)",
       "Bash(git commit -m 'fix: 멀티턴 *)",
       "Bash(git push *)",
-      "Bash(git commit -m 'feat: hybrid search *)"
+      "Bash(git commit -m 'feat: hybrid search *)",
+      "Read(//private/tmp/milvus_src/io/milvus/v2/service/vector/request/data/**)",
+      "Read(//private/tmp/milvus_src/**)",
+      "Bash(xargs cat *)",
+      "Bash(./gradlew compileJava)",
+      "Bash(./gradlew compileJava -Xlint:deprecation)",
+      "Bash(git commit *)"
     ]
   }
 }

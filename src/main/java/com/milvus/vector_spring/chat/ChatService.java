@@ -75,6 +75,10 @@ public class ChatService {
 
             LocalDateTime outputTime = LocalDateTime.now();
 
+            if (platform != LlmPlatform.OLLAMA) {
+                projectService.plusTotalToken(project.getKey(), answer.totalToken());
+            }
+
             publishChatEvent(project.getKey(), answer.totalToken(), request,
                     answer.finalAnswer(), finalContent, searchResult.results(), inputTime, outputTime);
 

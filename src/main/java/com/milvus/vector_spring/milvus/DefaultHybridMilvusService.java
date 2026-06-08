@@ -27,14 +27,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-/**
- * Hybrid Milvus implementation: combines dense vector search (COSINE) and sparse TF-based
- * keyword search (IP) via Reciprocal Rank Fusion (RRF). Only active when search-mode=HYBRID.
- *
- * Collection schema includes a sparse_vector field alongside the dense vector field.
- * Sparse vectors are computed client-side using term-frequency hashing so both insert
- * and query sides share the same representation without requiring server-side BM25.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -55,12 +47,18 @@ public class DefaultHybridMilvusService implements MilvusService {
                 throw new CustomException(ErrorStatus.MILVUS_COLLECTION_ALREADY_EXISTS);
             }
 
-            CreateCollectionReq.CollectionSchema schema = CreateCollectionReq.CollectionSchema.builder().build();
-            schema.addField(AddFieldReq.builder().fieldName("id").dataType(DataType.Int64).isPrimaryKey(true).autoID(false).build());
-            schema.addField(AddFieldReq.builder().fieldName("vector").dataType(DataType.FloatVector).dimension(dimension).build());
-            schema.addField(AddFieldReq.builder().fieldName(SPARSE_FIELD).dataType(DataType.SparseFloatVector).build());
-            schema.addField(AddFieldReq.builder().fieldName("title").dataType(DataType.VarChar).maxLength(512).build());
-            schema.addField(AddFieldReq.builder().fieldName("answer").dataType(DataType.VarChar).maxLength(65535).build());
+            // [수정] 구형 schema.addField() 방식 대신 Builder 내부에 필드 리스트를 직접 주입하도록 변경
+            List<CreateCollectionReq.FieldSchema> fields = List.of(
+                    CreateCollectionReq.FieldSchema.builder().name("id").dataType(DataType.Int64).isPrimaryKey(true).autoID(false).build(),
+                    CreateCollectionReq.FieldSchema.builder().name("vector").dataType(DataType.FloatVector).dimension(dimension).build(),
+                    CreateCollectionReq.FieldSchema.builder().name(SPARSE_FIELD).dataType(DataType.SparseFloatVector).build(),
+                    CreateCollectionReq.FieldSchema.builder().name("title").dataType(DataType.VarChar).maxLength(512).build(),
+                    CreateCollectionReq.FieldSchema.builder().name("answer").dataType(DataType.VarChar).maxLength(65535).build()
+            );
+
+            CreateCollectionReq.CollectionSchema schema = CreateCollectionReq.CollectionSchema.builder()
+                    .fieldSchemaList(fields)
+                    .build();
 
             List<IndexParam> indexes = List.of(
                     IndexParam.builder()
@@ -188,14 +186,14 @@ public class DefaultHybridMilvusService implements MilvusService {
                     .vectorFieldName("vector")
                     .vectors(List.of(new FloatVec(new ArrayList<>(denseVector))))
                     .params("{\"metric_type\": \"COSINE\", \"ef\": 300}")
-                    .topK(milvusProperties.topK())
+                    .limit(milvusProperties.topK())
                     .build();
 
             AnnSearchReq sparseReq = AnnSearchReq.builder()
                     .vectorFieldName(SPARSE_FIELD)
                     .vectors(List.of(sparseQueryVec))
                     .params("{\"metric_type\": \"IP\", \"drop_ratio_search\": 0.2}")
-                    .topK(milvusProperties.topK())
+                    .limit(milvusProperties.topK())
                     .build();
 
             return client.hybridSearch(HybridSearchReq.builder()

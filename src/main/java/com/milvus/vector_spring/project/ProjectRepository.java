@@ -23,4 +23,8 @@ public interface ProjectRepository  extends JpaRepository<Project, Long>, Projec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Project p where p.key = :key")
     Project findProjectByKeyForUpdate(@Param("key") String key);
+
+    @Modifying
+    @Query("UPDATE Project p SET p.totalToken = p.totalToken + :tokens WHERE p.key = :key")
+    int plusTotalToken(@Param("key") String key, @Param("tokens") long tokens);
 }

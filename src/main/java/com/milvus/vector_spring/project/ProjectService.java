@@ -111,8 +111,10 @@ public class ProjectService {
 
     @Transactional
     public void plusTotalToken(String key, long additionalTokens) {
-        Project project = projectRepository.findProjectByKeyForUpdate(key);
-        project.updateTotalToken(project.getTotalToken() + additionalTokens);
+        int updated = projectRepository.plusTotalToken(key, additionalTokens);
+        if (updated == 0) {
+            log.warn("Token accumulate skipped, project not found: key={}", key);
+        }
     }
 
     @Transactional
